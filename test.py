@@ -1,24 +1,9 @@
-class People(object):
-    """docstring for People."""
-
-    def __init__(self, name):
-        self.name = name
-
-    def print_name(self):
-        print('My name is: %s' % (self.name))
-
-
-class Student(People):
-    def __init__(self, name, score):
-        self.name = name
-        self.__score = score
-
-    def print_score(self):
-        print('My score is: %s' % (self.__score))
-
-
-bart = Student('zhangsan', 88)
-bart.name = "zhangsan"
-bart.__score = 77
-bart.print_name()
-bart.print_score()
+import os
+# os.mkdir('/home/cj/test')
+BADE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(os.getcwd())
+print(os.path.dirname(os.path.abspath('__file__')))
+print(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+File_Dir = os.path.join(BADE_DIR, 'Python3')
+if not os.path.exists(File_Dir):
+    os.mkdir(File_Dir)
