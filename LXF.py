@@ -2,12 +2,16 @@ import urllib.request
 import re
 import time
 import os
+import shutil
 
-BADE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class LXF(object):
-    """docstring for LXF."""
+    """
+    爬取廖雪峰网站Python3的教程内容，保存为MD格式的文件，
+    并利用Atom插件markdown-preview-enhanced制成电子书。
+    """
 
     def __init__(self, baseURL):
         super(LXF, self).__init__()
@@ -42,9 +46,11 @@ class LXF(object):
 
     def replace_content(self, x):
         add_imgpath = re.compile('src="/')
-        remove_4space = re.compile('    ')
+        remove_blankline = re.compile('[\s]*\n')
+        remove_tab = re.compile('        <p>')
         x = re.sub(add_imgpath, 'src="http://www.liaoxuefeng.com/', x)
-        x = re.sub(remove_4space, '', x)
+        x = re.sub(remove_blankline, '\n', x)
+        x = re.sub(remove_tab, '<p>', x)
         return x
 
     def replace_title(self, x):
@@ -62,18 +68,20 @@ class LXF(object):
             for item in items:
                 content = self.replace_content(item[1])
                 title = self.replace_title(item[0])
-                md = os.path.join(File_Dir, '%s.md' % (title))
+                md = os.path.join(DATA_DIR, '%s.md' % (title))
                 with open(md, 'a') as f:
-                    f.write('## ' + item[0] + '\n')
-                    f.write(content + '\n')
+                    f.write('## ' + title + content)
                     f.close()
             time.sleep(2)
 
 
-File_Dir = os.path.join(BADE_DIR, 'Python3Tutorial')
-if not os.path.exists(File_Dir):
-    os.mkdir(File_Dir)
+DATA_DIR = os.path.join(BASE_DIR, 'Python3Tutorial')
+if os.path.exists(DATA_DIR):
+    shutil.rmtree(DATA_DIR)
+os.mkdir(DATA_DIR)
 
+print("Start")
 baseURL = 'http://www.liaoxuefeng.com/'
 lxf = LXF(baseURL)
 lxf.get_content()
+print("End")
