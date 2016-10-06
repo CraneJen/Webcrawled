@@ -2,8 +2,13 @@ import urllib.request
 import re
 import os
 
-if os.path.isfile('Python3TOC.txt'):
-    os.remove('Python3TOC.txt')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'Python3TOC.md')
+
+if os.path.isfile(DATA_DIR):
+    os.remove(DATA_DIR)
+# if os.path.isfile('Python3TOC.txt'):
+#     os.remove('Python3TOC.txt')
 
 
 first = 'wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000'
@@ -19,7 +24,6 @@ patternurl = re.compile(
     '<li id.*?tyle="margin-left:(.*?)em;">.*?<a href=.*?>(.*?)</a>.*?</li>',
     re.S)
 urls = re.findall(pattern, content)
-
 path = re.findall(patternurl, urls[0])
 
 
@@ -45,6 +49,6 @@ for url in path:
     if listurl[0] == str(3):
         listurl[
             1] = '        * [%s](/%s.md)' % (listurl[1], listurl[1])
-    with open('Python3TOC.txt', 'a') as f:
+    with open(DATA_DIR, 'a') as f:
         f.write(listurl[1] + '\n')
         f.close()
