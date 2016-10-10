@@ -2,9 +2,11 @@ import urllib.request
 import re
 import os
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 't.txt')
 # Delete t.txt
-if os.path.isfile('t.txt'):
-    os.remove('t.txt')
+if os.path.isfile(DATA_DIR):
+    os.remove(DATA_DIR)
 
 page = 1
 
@@ -23,7 +25,7 @@ try:
     for item in items:
         haveImg = re.search('img', item[2])
         if not haveImg:
-            with open('t.txt', 'a') as f:
+            with open(DATA_DIR, 'a') as f:
                 replaceN = re.compile('\n')
                 text = re.sub(replaceN, "", item[1])
                 replaceBR = re.compile('<br/>')

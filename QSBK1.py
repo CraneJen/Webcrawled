@@ -4,8 +4,10 @@ import time
 import os
 
 # Delete QSBK.txt
-if os.path.isfile('QSBK.txt'):
-    os.remove('QSBK.txt')
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DATA_DIR = os.path.join(BASE_DIR, 'QSBK.txt')
+if os.path.isfile(DATA_DIR):
+    os.remove(DATA_DIR)
 
 
 class QSBK(object):
@@ -40,7 +42,7 @@ class QSBK(object):
         for item in items:
             haveImg = re.search('img', item[2])
             if not haveImg:
-                with open('QSBK.txt', 'a') as f:
+                with open(DATA_DIR, 'a') as f:
                     replaceN = re.compile('\n')
                     text = re.sub(replaceN, "", item[1])
                     replaceBR = re.compile('<br/>')

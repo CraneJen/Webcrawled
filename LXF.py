@@ -37,30 +37,28 @@ class LXF(object):
         request = urllib.request.Request(url)
         response = urllib.request.urlopen(request)
         content = response.read().decode('utf-8')
-
         pattern = re.compile(
             '<h4>(.*?)</h4>.*?<div class="x-wiki-content">(.*?)</div>', re.S)
         items = re.findall(pattern, content)
-
         return items
 
-    def replace_content(self, x):
-        add_imgpath = re.compile('src="/')
+    def replace_content(self, content):
+        add_imgpath = re.compile('src="/files/attachments')
         remove_blankline = re.compile('[\s]*\n')
-        remove_tab = re.compile('        <p>')
-        x = re.sub(add_imgpath, 'src="http://www.liaoxuefeng.com/', x)
-        x = re.sub(remove_blankline, '\n', x)
-        x = re.sub(remove_tab, '<p>', x)
-        return x
+        remove_tab = re.compile('        <')
+        content = re.sub(add_imgpath, 'src="', content)
+        content = re.sub(remove_blankline, '\n', content)
+        content = re.sub(remove_tab, '<', content)
+        return content
 
-    def replace_title(self, x):
+    def replace_title(self, content):
         remove_slash = re.compile('/')
         remove_space = re.compile('\s')
         remove_dash = re.compile('---')
-        x = re.sub(remove_slash, '', x)
-        x = re.sub(remove_space, '-', x)
-        x = re.sub(remove_dash, '-', x)
-        return x
+        content = re.sub(remove_slash, '', content)
+        content = re.sub(remove_space, '-', content)
+        content = re.sub(remove_dash, '-', content)
+        return content
 
     def get_content(self):
         for url in self.get_url():
@@ -73,7 +71,6 @@ class LXF(object):
                     f.write('## ' + title + content)
                     f.close()
             time.sleep(2)
-
 
 DATA_DIR = os.path.join(BASE_DIR, 'Python3Tutorial')
 if os.path.exists(DATA_DIR):
