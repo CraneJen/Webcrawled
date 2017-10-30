@@ -2,15 +2,15 @@ import os
 import re
 from urllib import request
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, 'Python3Tutorial')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, 'JavaScriptTutorial')
 IMG_DIR = os.path.join(DATA_DIR, 'img')
 if not os.path.isdir(IMG_DIR):
     os.mkdir(IMG_DIR)
 
 
 def get_imgurl(content):
-    pattern = re.compile('src="(.*?)"')
+    pattern = re.compile('src="img(.*?)"')
     imgurls = re.findall(pattern, content)
     for imgurl in imgurls:
         video = 'mp4$|swf$'
@@ -40,4 +40,5 @@ def get_img(DATA_DIR):
             get_imgurl(content)
 
 
-get_img(DATA_DIR)
+if __name__ == '__main__':
+    get_img(DATA_DIR)

@@ -4,7 +4,7 @@ import time
 import os
 import shutil
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class LXF(object):
@@ -24,9 +24,10 @@ class LXF(object):
         content = response.read().decode('utf-8')
 
         pattern = re.compile(
-            '<h4>(.*?)</h4>.*?<div class="x-wiki-content">(.*?)</div>', re.S)
+            '<h4>(.*?)</h4>.*?<div class="x-wiki-content x-main-content">(.*?)</div>',
+            re.S)
         items = re.findall(pattern, content)
-
+        print(items)
         return items
 
     def replace_content(self, x):
@@ -66,7 +67,7 @@ if os.path.exists(DATA_DIR):
 os.mkdir(DATA_DIR)
 
 print("Start")
-baseURL = 'http://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000/0014318435599930270c0381a3b44db991cd6d858064ac0000'
+baseURL = 'https://www.liaoxuefeng.com/wiki/001434446689867b27157e896e74d51a89c25cc8b43bdb3000'
 lxf = LXF(baseURL)
 lxf.get_content()
 print("End")

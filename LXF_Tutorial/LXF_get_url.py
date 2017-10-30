@@ -2,7 +2,7 @@ import urllib.request
 import re
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(BASE_DIR, 'Python3TOC.md')
 
 if os.path.isfile(DATA_DIR):
@@ -10,8 +10,7 @@ if os.path.isfile(DATA_DIR):
 # if os.path.isfile('Python3TOC.txt'):
 #     os.remove('Python3TOC.txt')
 
-
-first = 'wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000'
+first = 'wiki/001434446689867b27157e896e74d51a89c25cc8b43bdb3000'
 url = 'http://www.liaoxuefeng.com/' + first
 request = urllib.request.Request(url)
 response = urllib.request.urlopen(request)
@@ -47,8 +46,9 @@ for url in path:
     if listurl[0] == str(2):
         listurl[1] = '    * [%s](/%s.md)' % (listurl[1], listurl[1])
     if listurl[0] == str(3):
-        listurl[
-            1] = '        * [%s](/%s.md)' % (listurl[1], listurl[1])
+        listurl[1] = '        * [%s](/%s.md)' % (listurl[1], listurl[1])
+    if listurl[0] == str(4):
+        listurl[1] = '            * [%s](/%s.md)' % (listurl[1], listurl[1])
     with open(DATA_DIR, 'a') as f:
         f.write(listurl[1] + '\n')
         f.close()

@@ -4,8 +4,6 @@ import time
 import os
 import shutil
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 class LXF(object):
     """
@@ -18,7 +16,7 @@ class LXF(object):
         self.baseURL = baseURL
 
     def get_url(self):
-        first = 'wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000'
+        first = 'wiki/001434446689867b27157e896e74d51a89c25cc8b43bdb3000'
         url = self.baseURL + first
         request = urllib.request.Request(url)
         response = urllib.request.urlopen(request)
@@ -34,19 +32,27 @@ class LXF(object):
 
     def get_items(self, url):
         url = self.baseURL + url
-        request = urllib.request.Request(url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.91 Safari/537.36'
+        }
+        request = urllib.request.Request(url, headers=headers)
         response = urllib.request.urlopen(request)
         content = response.read().decode('utf-8')
         pattern = re.compile(
-            '<h4>(.*?)</h4>.*?<div class="x-wiki-content">(.*?)</div>', re.S)
+            '<h4>(.*?)</h4>.*?<div class="x-wiki-content x-main-content">(.*?)</div>',
+            re.S)
         items = re.findall(pattern, content)
         return items
 
     def replace_content(self, content):
-        add_imgpath = re.compile('src="/files/attachments')
+        add_imgpath = re.compile('<img src="/files/attachments/(.*?)" alt')
         remove_blankline = re.compile('[\s]*\n')
         remove_tab = re.compile('        <')
-        content = re.sub(add_imgpath, 'src="', content)
+        result = re.findall(add_imgpath, content)
+        for i in result:
+            i = i.replace('/', '')
+            rep = '<img src="img/{}" alt'.format(i)
+            content = re.sub(add_imgpath, rep, content)
         content = re.sub(remove_blankline, '\n', content)
         content = re.sub(remove_tab, '<', content)
         return content
@@ -62,23 +68,23 @@ class LXF(object):
 
     def get_content(self):
         for url in self.get_url():
+            print(url)
             items = self.get_items(url)
             for item in items:
                 content = self.replace_content(item[1])
                 title = self.replace_title(item[0])
-                md = os.path.join(DATA_DIR, '%s.md' % (title))
+                md = os.path.join(DATA_DIR, '{}.md'.format(title))
                 with open(md, 'a') as f:
                     f.write('## ' + title + content)
                     f.close()
             time.sleep(2)
 
-DATA_DIR = os.path.join(BASE_DIR, 'Python3Tutorial')
-if os.path.exists(DATA_DIR):
-    shutil.rmtree(DATA_DIR)
-os.mkdir(DATA_DIR)
 
-print("Start")
-baseURL = 'http://www.liaoxuefeng.com/'
-lxf = LXF(baseURL)
-lxf.get_content()
-print("End")
+if __name__ == '__main__':
+    t1 = time.time()
+    print('Start {}'.format(t1))
+    baseURL = 'http://www.liaoxuefeng.com/'
+    lxf = LXF(baseURL)
+    lxf.get_content()
+    t2 = time.time()
+    print("End {}".format(t2 - t1))
