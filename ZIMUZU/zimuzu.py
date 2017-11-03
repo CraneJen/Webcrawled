@@ -1,6 +1,6 @@
 import requests
 import os
-import json
+import sqlite3
 from requests.exceptions import RequestException
 import re
 import xmlrpc.client
@@ -11,18 +11,78 @@ from logging.handlers import RotatingFileHandler
 # logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S ', level=logging.INFO)
 
 
-def getLogger(name):
+def getLogger(Data_dir=None, name=None):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-    formatter = logging.Formatter('[%(levelname)s]: %(asctime)s- %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter('[%(levelname)s]: %(asctime)s - %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
 
-    # RotatingFileHandler
-    logger_handler = RotatingFileHandler('{}.log'.format(name), maxBytes=5 * 1024 * 1024, backupCount=2, encoding='utf-8', delay=0)
-    logger_handler.setLevel(logging.INFO)
-    logger_handler.setFormatter(formatter)
+    # RotatingFileHandler --> write log to file
+    log_dir = os.path.join(Data_dir, '{}.log'.format(name))
+    file_handler = RotatingFileHandler(log_dir, maxBytes=5 * 1024 * 1024, backupCount=2, encoding='utf-8', delay=0)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
 
-    logger.addHandler(logger_handler)
+    # Stream handler --> control log display on screen
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
     return logger
+
+
+def createDB(Data_dir):
+    path = os.path.join(Data_dir, 'zimuzu.sqlite3')
+    conn = sqlite3.connect(path)
+    cursor = conn.cursor()
+    cursor.execute('''CREATE TABLE IF NOT EXISTS drama
+        (id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL UNIQUE,
+        season INT NOT NULL,
+        episode INT NOT NULL
+        );
+        ''')
+    cursor.close()
+    conn.commit()
+    conn.close()
+
+
+def getCursor(func):
+    def __call(*args, **kwargs):
+        conn = sqlite3.connect('zimuzu.sqlite3')
+        cursor = conn.cursor()
+        action = func(cursor, *args, **kwargs)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return action
+    return __call
+
+
+@getCursor
+def insertData(cursor, name, season, episode):
+    cursor.execute("INSERT INTO drama (name,season,episode) \
+   VALUES ('{0}',{1},{2});".format(name, season, episode))
+    print(cursor.rowcount)
+
+
+@getCursor
+def getByName(cursor, name):
+    cursor.execute("SELECT * FROM drama WHERE name='{0}';".format(name))
+    value = cursor.fetchall()
+    return value
+
+
+@getCursor
+def getAll(cursor):
+    cursor.execute("SELECT * FROM drama;")
+    return cursor.fetchall()
+
+
+@getCursor
+def updateData(cursor, name, season, episode):
+    cursor.execute("UPDATE drama SET season={0}, episode ={1} WHERE name='{2}'".format(season, episode, name))
 
 
 class ZIMUZU(object):
@@ -56,7 +116,7 @@ class ZIMUZU(object):
         self.session.post(login_url, auth)
 
     def get_page(self):
-        fav_url = '{}/User/Fav'.format(self.url)
+        fav_url = '{}/User/Fav?type=ustv'.format(self.url)
         try:
             response = self.session.get(fav_url)
             if response.status_code == 200:
@@ -79,27 +139,35 @@ class ZIMUZU(object):
     def get_dllink(self):
         items = self.get_items()
         update = False
-        with open('episode.json', 'r', encoding='utf-8') as f:
-            json_data = json.load(f)
-            for item in items:
-                patt = re.compile('(^\w+)..*?S(\d+)E(\d+).*?', re.S)
-                SE = re.findall(patt, item[0])
-                for se in SE:
-                    drama = se[0]
-                    season = se[1]
-                    episode = se[2]
-                    if json_data[drama] < episode:
-                        logger.info('更新并下载剧集《{0}》/S{1}E{2}'.format(drama, season, episode))
-                        self.aria2_dl(item[1])
-                        json_data[drama] = episode
-                        update = True
+        for item in items:
+            pattern = re.compile('(^\w+)..*?S(\d+)E(\d+).*?', re.S)
+            dramas = re.findall(pattern, item[0])
+            for drama in dramas:
+                name = drama[0]
+                season = int(drama[1])
+                episode = int(drama[2])
+                _drama = getByName(name)
+                # new sub
+                if _drama == []:
+                    insertData(name, season, episode)
+                    logger.info('更新剧集《{0}》：S{1}E{2}'.format(name, season, episode))
+                    self.aria2_dl(item[1])
+                    update = True
+                # new season
+                elif season > _drama[0][2]:
+                    updateData(name, season, episode)
+                    logger.info('更新剧集《{0}》：S{1}E{2}'.format(name, season, episode))
+                    self.aria2_dl(item[1])
+                    update = True
+                #  new episode
+                elif season == _drama[0][2] and episode > _drama[0][3]:
+                    updateData(name, season, episode)
+                    logger.info('更新剧集《{0}》：S{1}E{2}'.format(name, season, episode))
+                    self.aria2_dl(item[1])
+                    update = True
 
         if update is False:
             logger.info('未更新任何剧集！！！')
-
-        with open('episode.json', 'w', encoding='utf-8') as f:
-            f.write(json.dumps(json_data, indent=4, ensure_ascii=False))
-            f.close()
 
     # download the drama by aria2
     def aria2_dl(self, dllink):
@@ -107,9 +175,31 @@ class ZIMUZU(object):
         s.aria2.addUri('token:{0}'.format(self.token),
                        [dllink], {'dir': self.path})
 
+    # # write the page to local
+    # def write_to_file(self):
+    #     content = self.get_page()
+    #     with open('result.html', 'w', encoding='utf-8') as f:
+    #         f.write(content)
+    #         f.close()
+
+    def getCursor(func):
+        def __call(*args, **kwargs):
+            conn = sqlite3.connect('zimuzu.sqlite3')
+            cursor = conn.cursor()
+            ret = func(cursor, *args, **kwargs)
+            conn.commit()
+
+            cursor.close()
+            conn.close()
+            return ret
+        return __call
+        pass
+
 
 if __name__ == '__main__':
-    logger = getLogger('zimuzu')
+    Data_dir = os.path.dirname(os.path.abspath(__file__))
+    episode = os.path.join(Data_dir, 'episode.json')
+    logger = getLogger(Data_dir=Data_dir, name='zimuzu')
     zimuzu = ZIMUZU()
     zimuzu.log_in()
     zimuzu.get_dllink()

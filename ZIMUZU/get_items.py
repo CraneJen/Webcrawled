@@ -23,17 +23,18 @@ def get_dllink():
     update = False
     with open('episode.json', 'r', encoding='utf-8') as f:
         json_data = json.load(f)
+        print(json_data)
         for item in items:
             pattern = re.compile('(^\w+)..*?S(\d+)E(\d+).*?', re.S)
-            SE = re.findall(pattern, item[0])
-            for se in SE:
-                drama = se[0]
-                season = se[1]
-                episode = se[2]
-                if json_data[drama] < episode:
-                    logger.info('更新剧集《{0}》/S{1}E{2}'.format(drama, season, episode))
+            dramas = re.findall(pattern, item[0])
+            for drama in dramas:
+                title = drama[0]
+                season = drama[1]
+                episode = drama[2]
+                if title not in json_data.keys() or json_data[title].split('/')[1] < episode:
+                    logger.info('更新剧集《{0}》/S{1}E{2}'.format(title, season, episode))
                     write_to_file(item[1])
-                    json_data[drama] = episode
+                    json_data[title] = '{}/{}'.format(season, episode)
                     update = True
 
     if update is False:
