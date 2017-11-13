@@ -19,6 +19,7 @@ def createDB():
 def getCursor(func):
     def __call(*args, **kwargs):
         conn = sqlite3.connect('zimuzu.sqlite3')
+        conn.row_factory = dic_factory
         cursor = conn.cursor()
         action = func(cursor, *args, **kwargs)
 
@@ -45,7 +46,7 @@ def getByName(cursor, name):
 
 @getCursor
 def getAll(cursor):
-    cursor.execute("SELECT * FROM drama;")
+    cursor.execute("SELECT name,season,episode FROM drama;")
     return cursor.fetchall()
 
 
@@ -54,22 +55,14 @@ def updateData(cursor, name, season, episode):
     cursor.execute("UPDATE drama SET season={0}, episode ={1} WHERE name='{2}'".format(season, episode, name))
 
 
+def dic_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
+
+
 if __name__ == '__main__':
+    updateData('南方公园', 21, 5)
     value = getAll()
     print(value)
-
-    # try:
-    #     updateData('硅谷', 11, 2)
-    # except Exception as e:
-    #     # raise e
-    #     print(e)
-    # else:
-    #     insertData('硅谷', 11, 2)
-    # finally:
-    #     datas = getAll()
-
-    # for data in datas:
-    #     print('name: {}'.format(data[1]))
-    #     print('season: {}'.format(data[2]))
-    #     print('episode: {}'.format(data[3]))
-    #     print('\n')

@@ -7,6 +7,9 @@ import xmlrpc.client
 import logging
 from logging.handlers import RotatingFileHandler
 
+
+Data_dir = os.path.dirname(os.path.abspath(__file__))
+
 # FORMAT = '[%(levelname)s]: %(asctime)s- %(message)s'
 # logging.basicConfig(format=FORMAT, datefmt='%m/%d/%Y %H:%M:%S ', level=logging.INFO)
 
@@ -31,7 +34,7 @@ def getLogger(Data_dir=None, name=None):
     return logger
 
 
-def createDB(Data_dir):
+def createDB():
     path = os.path.join(Data_dir, 'zimuzu.sqlite3')
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
@@ -48,8 +51,9 @@ def createDB(Data_dir):
 
 
 def getCursor(func):
-    def __call(*args, **kwargs):
-        conn = sqlite3.connect('zimuzu.sqlite3')
+    def wrapper(*args, **kwargs):
+        path = os.path.join(Data_dir, 'zimuzu.sqlite3')
+        conn = sqlite3.connect(path)
         cursor = conn.cursor()
         action = func(cursor, *args, **kwargs)
 
@@ -57,7 +61,7 @@ def getCursor(func):
         cursor.close()
         conn.close()
         return action
-    return __call
+    return wrapper
 
 
 @getCursor
@@ -120,7 +124,7 @@ class ZIMUZU(object):
         try:
             response = self.session.get(fav_url)
             if response.status_code == 200:
-                logger.info('登陆成功！')
+                logger.info('登录成功！')
                 return response.text
             else:
                 return None
@@ -197,8 +201,6 @@ class ZIMUZU(object):
 
 
 if __name__ == '__main__':
-    Data_dir = os.path.dirname(os.path.abspath(__file__))
-    episode = os.path.join(Data_dir, 'episode.json')
     logger = getLogger(Data_dir=Data_dir, name='zimuzu')
     zimuzu = ZIMUZU()
     zimuzu.log_in()
